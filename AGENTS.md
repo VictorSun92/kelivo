@@ -302,6 +302,7 @@ flutter test
   - Only record issues that actually occurred in this repo and have reuse value for future development.
   - Do not write "heard this might happen" hearsay entries.
   - When adding entries, prefer "symptom -> root cause -> fix/constraint". Avoid recording conclusions without context.
+- `chat_message.g.dart` fields 15-19 carry hand-written type guards (upstream ddfef18b) that build_runner regeneration silently drops -> after running build_runner, diff the file and restore the guards before committing.
 
 ## Appendix: Skills Usage Rules
 

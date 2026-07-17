@@ -26,4 +26,17 @@ void main() {
       expect(conversation.toJson()['chatSuggestions'], ['继续', '举例']);
     });
   });
+
+  group('Conversation messageIds compatibility', () {
+    test('fromJson defaults missing messageIds to empty list', () {
+      final conversation = Conversation.fromJson({
+        'id': 'conversation-3',
+        'title': 'Chat',
+        'createdAt': DateTime(2026, 1, 1).toIso8601String(),
+        'updatedAt': DateTime(2026, 1, 2).toIso8601String(),
+      });
+
+      expect(conversation.messageIds, isEmpty);
+    });
+  });
 }

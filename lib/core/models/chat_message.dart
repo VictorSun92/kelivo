@@ -70,11 +70,60 @@ class ChatMessage extends HiveObject {
   @HiveField(19)
   final int? durationMs;
 
-  ChatMessage({
+  // Factory computes the id once so groupId can default to the generated id
+  // (an initializer list would see the still-null `id` parameter instead).
+  factory ChatMessage({
     String? id,
+    required String role,
+    required String content,
+    DateTime? timestamp,
+    String? modelId,
+    String? providerId,
+    int? totalTokens,
+    required String conversationId,
+    bool isStreaming = false,
+    String? reasoningText,
+    DateTime? reasoningStartAt,
+    DateTime? reasoningFinishedAt,
+    String? translation,
+    String? reasoningSegmentsJson,
+    String? groupId,
+    int? version,
+    int? promptTokens,
+    int? completionTokens,
+    int? cachedTokens,
+    int? durationMs,
+  }) {
+    final resolvedId = id ?? const Uuid().v4();
+    return ChatMessage._(
+      id: resolvedId,
+      role: role,
+      content: content,
+      timestamp: timestamp ?? DateTime.now(),
+      modelId: modelId,
+      providerId: providerId,
+      totalTokens: totalTokens,
+      conversationId: conversationId,
+      isStreaming: isStreaming,
+      reasoningText: reasoningText,
+      reasoningStartAt: reasoningStartAt,
+      reasoningFinishedAt: reasoningFinishedAt,
+      translation: translation,
+      reasoningSegmentsJson: reasoningSegmentsJson,
+      groupId: groupId ?? resolvedId,
+      version: version ?? 0,
+      promptTokens: promptTokens,
+      completionTokens: completionTokens,
+      cachedTokens: cachedTokens,
+      durationMs: durationMs,
+    );
+  }
+
+  ChatMessage._({
+    required this.id,
     required this.role,
     required this.content,
-    DateTime? timestamp,
+    required this.timestamp,
     this.modelId,
     this.providerId,
     this.totalTokens,
@@ -85,16 +134,13 @@ class ChatMessage extends HiveObject {
     this.reasoningFinishedAt,
     this.translation,
     this.reasoningSegmentsJson,
-    String? groupId,
-    int? version,
+    this.groupId,
+    required this.version,
     this.promptTokens,
     this.completionTokens,
     this.cachedTokens,
     this.durationMs,
-  }) : id = id ?? const Uuid().v4(),
-       timestamp = timestamp ?? DateTime.now(),
-       groupId = groupId ?? id,
-       version = version ?? 0;
+  });
 
   ChatMessage copyWith({
     String? id,
