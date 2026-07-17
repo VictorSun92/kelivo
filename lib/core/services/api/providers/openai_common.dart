@@ -1437,7 +1437,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
           final u = (obj['usage'] ?? obj['response']?['usage']) as Map?;
           if (u != null) {
             final prompt =
-                (u['prompt_tokens'] ?? u['input_tokens'] ?? 0) as int? ?? 0;
+                ((u['prompt_tokens'] ?? u['input_tokens']) as int?) ?? 0;
             final completion =
                 (u['completion_tokens'] ?? u['output_tokens'] ?? 0) as int? ??
                 0;
@@ -1488,8 +1488,8 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
         try {
           final u = lastObj['usage'];
           if (u is Map) {
-            final prompt = (u['prompt_tokens'] ?? 0) as int? ?? 0;
-            final completion = (u['completion_tokens'] ?? 0) as int? ?? 0;
+            final prompt = (u['prompt_tokens'] as int?) ?? 0;
+            final completion = (u['completion_tokens'] as int?) ?? 0;
             final cached =
                 (u['prompt_tokens_details']?['cached_tokens'] ?? 0) as int? ??
                 0;
@@ -2242,7 +2242,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
           } else if (type == 'response.output_item.added') {
             try {
               final item = json['item'];
-              final idx = (json['output_index'] ?? 0) as int? ?? 0;
+              final idx = (json['output_index'] as int?) ?? 0;
               if (item is Map && (item['type'] ?? '') == 'function_call') {
                 final name = (item['name'] ?? '').toString();
                 final callId = (item['call_id'] ?? '').toString();
@@ -2263,7 +2263,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
             try {
               final b64 = (json['partial_image_b64'] ?? '').toString();
               if (b64.isNotEmpty) {
-                final idx = (json['output_index'] ?? 0) as int? ?? 0;
+                final idx = (json['output_index'] as int?) ?? 0;
                 responsesImagesByIndex[idx] = _ResponsesImageGenerationResult(
                   base64: b64,
                   outputFormat: (json['output_format'] ?? '').toString(),
@@ -2272,7 +2272,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
             } catch (_) {}
           } else if (type == 'response.function_call_arguments.delta') {
             try {
-              final idx = (json['output_index'] ?? 0) as int? ?? 0;
+              final idx = (json['output_index'] as int?) ?? 0;
               final delta = (json['delta'] ?? '').toString();
               final entry = respToolCallsByIndex.putIfAbsent(
                 idx,
@@ -2285,7 +2285,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
           } else if (type == 'response.output_item.done') {
             try {
               final item = json['item'];
-              final idx = (json['output_index'] ?? 0) as int? ?? 0;
+              final idx = (json['output_index'] as int?) ?? 0;
               if (item is Map && (item['type'] ?? '') == 'function_call') {
                 final args = (item['arguments'] ?? '').toString();
                 final entry = respToolCallsByIndex.putIfAbsent(
@@ -2333,8 +2333,8 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
           } else if (type == 'response.completed') {
             final u = json['response']?['usage'];
             if (u != null) {
-              final inTok = (u['input_tokens'] ?? 0) as int? ?? 0;
-              final outTok = (u['output_tokens'] ?? 0) as int? ?? 0;
+              final inTok = (u['input_tokens'] as int?) ?? 0;
+              final outTok = (u['output_tokens'] as int?) ?? 0;
               usage = (usage ?? const TokenUsage()).merge(
                 TokenUsage(promptTokens: inTok, completionTokens: outTok),
               );
@@ -2669,7 +2669,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                       } else if (o is Map &&
                           (o['type'] ?? '') == 'response.output_item.added') {
                         final item = o['item'];
-                        final idx2 = (o['output_index'] ?? 0) as int? ?? 0;
+                        final idx2 = (o['output_index'] as int?) ?? 0;
                         if (item is Map &&
                             (item['type'] ?? '') == 'function_call') {
                           respCalls2[idx2] = {
@@ -2681,7 +2681,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                       } else if (o is Map &&
                           (o['type'] ?? '') ==
                               'response.function_call_arguments.delta') {
-                        final idx2 = (o['output_index'] ?? 0) as int? ?? 0;
+                        final idx2 = (o['output_index'] as int?) ?? 0;
                         final delta = (o['delta'] ?? '').toString();
                         final entry = respCalls2.putIfAbsent(
                           idx2,
@@ -2693,7 +2693,7 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                       } else if (o is Map &&
                           (o['type'] ?? '') == 'response.output_item.done') {
                         final item = o['item'];
-                        final idx2 = (o['output_index'] ?? 0) as int? ?? 0;
+                        final idx2 = (o['output_index'] as int?) ?? 0;
                         if (item is Map &&
                             (item['type'] ?? '') == 'function_call') {
                           final args = (item['arguments'] ?? '').toString();
@@ -2712,9 +2712,8 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                         // usage
                         final u2 = o['response']?['usage'];
                         if (u2 != null) {
-                          final inTok = (u2['input_tokens'] ?? 0) as int? ?? 0;
-                          final outTok =
-                              (u2['output_tokens'] ?? 0) as int? ?? 0;
+                          final inTok = (u2['input_tokens'] as int?) ?? 0;
+                          final outTok = (u2['output_tokens'] as int?) ?? 0;
                           usage = (usage ?? const TokenUsage()).merge(
                             TokenUsage(
                               promptTokens: inTok,
@@ -2876,8 +2875,8 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
               approxCompletionChars += content.length;
               final u = json['usage'];
               if (u != null) {
-                final inTok = (u['input_tokens'] ?? 0) as int? ?? 0;
-                final outTok = (u['output_tokens'] ?? 0) as int? ?? 0;
+                final inTok = (u['input_tokens'] as int?) ?? 0;
+                final outTok = (u['output_tokens'] as int?) ?? 0;
                 usage = (usage ?? const TokenUsage()).merge(
                   TokenUsage(promptTokens: inTok, completionTokens: outTok),
                 );

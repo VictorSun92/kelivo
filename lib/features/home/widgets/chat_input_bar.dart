@@ -380,47 +380,22 @@ class _ChatInputBarState extends State<ChatInputBar>
   Future<void> _openCompressionDialog(int idx) async {
     if (idx >= _images.length) return;
     final path = _images[idx];
-    if (path.isEmpty) return;
     final probe = await ImageCompressor.probe(path);
     if (!mounted || probe == null || probe.width == 0 || probe.height == 0) {
       return;
     }
-    final w = probe.width;
-    final h = probe.height;
-    final hasRealAlpha = probe.hasRealAlpha;
-    if (MediaQuery.of(context).size.width < AppBreakpoints.tablet) {
-      await ImageCompressionDialog.showSheet(
-        context,
-        imagePath: path,
-        totalImageCount: _images.length,
-        originalWidth: w,
-        originalHeight: h,
-        hasRealAlpha: hasRealAlpha,
-        onCompress: (config) async {
-          if (config.compressAll) {
-            await _compressAll(config);
-          } else {
-            await _compressSingle(idx, config);
-          }
-        },
-      );
-    } else {
-      await ImageCompressionDialog.show(
-        context,
-        imagePath: path,
-        totalImageCount: _images.length,
-        originalWidth: w,
-        originalHeight: h,
-        hasRealAlpha: hasRealAlpha,
-        onCompress: (config) async {
-          if (config.compressAll) {
-            await _compressAll(config);
-          } else {
-            await _compressSingle(idx, config);
-          }
-        },
-      );
-    }
+    await ImageCompressionDialog.show(
+      context,
+      imagePath: path,
+      sizeBytes: _imageSizes[path] ?? _fileSize(path),
+      totalImageCount: _images.length,
+      originalWidth: probe.width,
+      originalHeight: probe.height,
+      hasRealAlpha: probe.hasRealAlpha,
+      onCompress: (config) => config.compressAll
+          ? _compressAll(config)
+          : _compressSingle(idx, config),
+    );
   }
 
   /// Apply a compression result to the image list and evict cache.
@@ -449,30 +424,38 @@ class _ChatInputBarState extends State<ChatInputBar>
     final origBytes = _imageSizes[oldPath] ?? 0;
     final newPath = await ImageCompressor.compressIfNeeded(
       oldPath,
-      enabled: true,
       quality: config.quality,
       maxDimension: config.maxDimension,
       keepPng: config.keepPng,
     );
     if (!mounted) return;
-    final currentIdx = _images.indexOf(oldPath);
-    if (currentIdx == -1 || currentIdx != idx) return;
+    if (_images.indexOf(oldPath) != idx) return;
     setState(() {
       _applyCompressionResult(oldPath, newPath);
     });
-    _maybeShowCompressionResult(context, origBytes, _imageSizes[newPath] ?? 0);
+    final newBytes = _imageSizes[newPath] ?? 0;
+    _showCompressionSavings(
+      origBytes: origBytes,
+      newBytes: newBytes,
+      message: (l10n, pct) => l10n.imageCompressionSingleResult(
+        formatBytes(origBytes),
+        formatBytes(newBytes),
+        pct,
+      ),
+    );
   }
 
   Future<void> _compressAll(CompressionConfig config) async {
     int totalOrig = 0, totalNew = 0;
     final snapshot = List<String>.of(_images);
     final results = <({String oldPath, String newPath, int origBytes})>[];
+    // Compress sequentially: each decode can hold a multi-hundred-MB pixel
+    // buffer in its isolate, so concurrent fan-out risks OOM on mobile.
     for (final oldPath in snapshot) {
       if (!_images.contains(oldPath)) continue;
       final origBytes = _imageSizes[oldPath] ?? 0;
       final newPath = await ImageCompressor.compressIfNeeded(
         oldPath,
-        enabled: true,
         quality: config.quality,
         maxDimension: config.maxDimension,
         keepPng: config.keepPng,
@@ -488,37 +471,27 @@ class _ChatInputBarState extends State<ChatInputBar>
       }
     });
     if (!mounted) return;
-    final saved = totalOrig - totalNew;
-    if (saved > 0 && totalOrig > 0) {
-      final pct = (saved * 100 / totalOrig).round();
-      final l10n = AppLocalizations.of(context);
-      if (l10n != null) {
-        showAppSnackBar(
-          context,
-          message: l10n.imageCompressionBatchResult(formatBytes(saved), '$pct'),
-          type: NotificationType.success,
-        );
-      }
-    }
+    _showCompressionSavings(
+      origBytes: totalOrig,
+      newBytes: totalNew,
+      message: (l10n, pct) => l10n.imageCompressionBatchResult(
+        formatBytes(totalOrig - totalNew),
+        pct,
+      ),
+    );
   }
 
-  void _maybeShowCompressionResult(
-    BuildContext context,
-    int origBytes,
-    int newBytes,
-  ) {
+  /// Snackbar for compression savings; no-op when nothing was saved.
+  void _showCompressionSavings({
+    required int origBytes,
+    required int newBytes,
+    required String Function(AppLocalizations l10n, String pct) message,
+  }) {
     if (origBytes <= 0 || newBytes <= 0 || origBytes <= newBytes) return;
-    final saved = origBytes - newBytes;
-    final pct = (saved * 100 / origBytes).round();
-    final l10n = AppLocalizations.of(context);
-    if (l10n == null) return;
+    final pct = ((origBytes - newBytes) * 100 / origBytes).round();
     showAppSnackBar(
       context,
-      message: l10n.imageCompressionSingleResult(
-        formatBytes(origBytes),
-        formatBytes(newBytes),
-        '$pct',
-      ),
+      message: message(AppLocalizations.of(context)!, '$pct'),
       type: NotificationType.success,
     );
   }

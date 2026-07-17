@@ -99,6 +99,16 @@ class ProviderBalanceValueParser {
 class ProviderBalanceService {
   const ProviderBalanceService._();
 
+  /// Whether balance querying applies to this provider:
+  /// OpenAI-compatible with balance enabled.
+  static bool supportsBalance(ProviderConfig config) {
+    final kind = ProviderConfig.classify(
+      config.id,
+      explicitType: config.providerType,
+    );
+    return kind == ProviderKind.openai && config.balanceEnabled == true;
+  }
+
   static Future<String> fetchBalance(ProviderConfig config) {
     return _fetchBalance(config, _effectiveApiKey(config));
   }

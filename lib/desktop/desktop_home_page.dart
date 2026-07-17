@@ -265,6 +265,8 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
             ? Stack(
                 children: [
                   body,
+                  // left: 78 keeps the macOS traffic-light buttons clickable
+                  // (their layout lives in macos/Runner/MainFlutterWindow.swift).
                   const Positioned(
                     top: 0,
                     left: 78,

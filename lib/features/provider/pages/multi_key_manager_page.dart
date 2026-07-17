@@ -31,9 +31,10 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
   bool _detecting = false;
   String? _testingKeyId;
   bool _queryingBalance = false;
-  // Per-key balance results, keyed by ApiKeyConfig.id.
-  final Map<String, String> _balances = <String, String>{};
-  final Map<String, String> _balanceErrors = <String, String>{};
+  // Per-key balance query outcome, keyed by ApiKeyConfig.id.
+  // Exactly one of value/error is set per entry.
+  final Map<String, ({String? value, String? error})> _balanceResults =
+      <String, ({String? value, String? error})>{};
 
   @override
   Widget build(BuildContext context) {
@@ -65,68 +66,28 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
         ),
         title: Text(l10n.multiKeyPageTitle),
         actions: [
-          Tooltip(
-            message: l10n.multiKeyPageDeleteErrorsTooltip,
-            child: _TactileIconButton(
-              icon: Lucide.Trash2,
-              color: cs.onSurface,
-              semanticLabel: l10n.multiKeyPageDeleteErrorsTooltip,
-              onTap: _onDeleteAllErrorKeys,
-            ),
+          _toolbarAction(
+            icon: Lucide.Trash2,
+            label: l10n.multiKeyPageDeleteErrorsTooltip,
+            onTap: _onDeleteAllErrorKeys,
           ),
-          if (_queryingBalance)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: cs.primary,
-                ),
-              ),
-            )
-          else
-            Tooltip(
-              message: l10n.multiKeyPageQueryBalance,
-              child: _TactileIconButton(
-                icon: Lucide.Coins,
-                color: cs.onSurface,
-                semanticLabel: l10n.multiKeyPageQueryBalance,
-                onTap: _onQueryBalances,
-              ),
-            ),
-          if (_detecting)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: cs.primary,
-                ),
-              ),
-            )
-          else
-            Tooltip(
-              message: l10n.multiKeyPageDetect,
-              child: _TactileIconButton(
-                icon: Lucide.HeartPulse,
-                color: cs.onSurface,
-                semanticLabel: l10n.multiKeyPageDetect,
-                onTap: _onDetect,
-                onLongPress: _onPickDetectModel,
-              ),
-            ),
-          Tooltip(
-            message: l10n.multiKeyPageAdd,
-            child: _TactileIconButton(
-              icon: Lucide.Plus,
-              color: cs.onSurface,
-              semanticLabel: l10n.multiKeyPageAdd,
-              onTap: _onAddKeys,
-            ),
+          _toolbarAction(
+            busy: _queryingBalance,
+            icon: Lucide.Coins,
+            label: l10n.multiKeyPageQueryBalance,
+            onTap: _onQueryBalances,
+          ),
+          _toolbarAction(
+            busy: _detecting,
+            icon: Lucide.HeartPulse,
+            label: l10n.multiKeyPageDetect,
+            onTap: _onDetect,
+            onLongPress: _onPickDetectModel,
+          ),
+          _toolbarAction(
+            icon: Lucide.Plus,
+            label: l10n.multiKeyPageAdd,
+            onTap: _onAddKeys,
           ),
           const SizedBox(width: 12),
         ],
@@ -360,8 +321,7 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
-                      if (_balances[k.id] != null ||
-                          _balanceErrors[k.id] != null)
+                      if (_balanceResults.containsKey(k.id))
                         Padding(
                           padding: const EdgeInsets.only(top: 3),
                           child: _balanceLine(k),
@@ -422,10 +382,42 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
     );
   }
 
+  /// AppBar action button that swaps to a spinner while [busy].
+  Widget _toolbarAction({
+    bool busy = false,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    VoidCallback? onLongPress,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    if (busy) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
+        ),
+      );
+    }
+    return Tooltip(
+      message: label,
+      child: _TactileIconButton(
+        icon: icon,
+        color: cs.onSurface,
+        semanticLabel: label,
+        onTap: onTap,
+        onLongPress: onLongPress,
+      ),
+    );
+  }
+
   Widget _balanceLine(ApiKeyConfig k) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final err = _balanceErrors[k.id];
+    final result = _balanceResults[k.id]!;
+    final err = result.error;
     if (err != null) {
       return Text(
         l10n.providerDetailPageBalanceError(err),
@@ -434,7 +426,7 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
         overflow: TextOverflow.ellipsis,
       );
     }
-    final value = _balances[k.id]!;
+    final value = result.value!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -734,13 +726,8 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
       defaultName: widget.providerDisplayName,
     );
     final l10n = AppLocalizations.of(context)!;
-    // Balance query reuses the provider-level balance settings; it must be
-    // enabled and the provider must be OpenAI-compatible.
-    final kind = ProviderConfig.classify(
-      cfg.id,
-      explicitType: cfg.providerType,
-    );
-    if (kind != ProviderKind.openai || cfg.balanceEnabled != true) {
+    // Balance query reuses the provider-level balance settings.
+    if (!ProviderBalanceService.supportsBalance(cfg)) {
       showAppSnackBar(
         context,
         message: l10n.multiKeyPageBalanceDisabled,
@@ -753,8 +740,7 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
 
     setState(() {
       _queryingBalance = true;
-      _balances.clear();
-      _balanceErrors.clear();
+      _balanceResults.clear();
     });
     try {
       // Query every key's balance concurrently.
@@ -766,16 +752,12 @@ class _MultiKeyManagerPageState extends State<MultiKeyManagerPage> {
               k.key,
             );
             if (!mounted) return;
-            setState(() {
-              _balances[k.id] = value;
-              _balanceErrors.remove(k.id);
-            });
+            setState(() => _balanceResults[k.id] = (value: value, error: null));
           } catch (e) {
             if (!mounted) return;
-            setState(() {
-              _balanceErrors[k.id] = e.toString();
-              _balances.remove(k.id);
-            });
+            setState(
+              () => _balanceResults[k.id] = (value: null, error: e.toString()),
+            );
           }
         }),
       );

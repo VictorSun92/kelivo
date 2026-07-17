@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 
-/// Image compression performed at STORAGE/INGESTION time.
+/// Manual image compression for chat attachments (user-commanded).
 ///
 /// [ImageCompressor.compressIfNeeded] decodes the image, applies EXIF
 /// orientation, optionally resizes, and re-encodes it (JPEG, or PNG when
@@ -23,22 +23,19 @@ import 'package:path/path.dart' as p;
 /// [compute]. The method is defensive: on ANY failure, or when the result
 /// would not be smaller than the original, it returns [srcPath] unchanged.
 class ImageCompressor {
-  /// Compress [srcPath] per settings. Returns the path to use afterwards
-  /// (differs from srcPath only when the extension changed, e.g. .png -> .jpg).
+  /// Compress [srcPath] per the user-selected config. Returns the path to use
+  /// afterwards (differs from srcPath only when the extension changed, e.g.
+  /// .png -> .jpg).
   /// On ANY failure, or when compression is not beneficial (result >= original
   /// bytes), returns srcPath unchanged and leaves the original file intact.
   /// When it writes a new file with a DIFFERENT extension, it deletes the old.
   static Future<String> compressIfNeeded(
     String srcPath, {
-    required bool enabled,
     required int quality, // JPEG quality 1..100, used only when output is JPEG
     int?
     maxDimension, // if set, longest edge resized to this value (aspect ratio preserved)
     bool keepPng = false, // if true, skip format detection, always output PNG
-    int minBytes = 60 * 1024, // skip files smaller than this (not worth it)
   }) async {
-    if (!enabled) return srcPath;
-
     try {
       final File srcFile = File(srcPath);
       if (!await srcFile.exists()) return srcPath;
@@ -51,9 +48,6 @@ class ImageCompressor {
 
       final Uint8List original = await srcFile.readAsBytes();
       final int originalBytes = original.length;
-
-      // Not worth compressing tiny files.
-      if (originalBytes < minBytes) return srcPath;
 
       // Clamp quality into a sane range.
       final int q = quality.clamp(1, 100);
@@ -158,7 +152,16 @@ class _CompressResult {
 /// Runs inside a background isolate. Returns null when undecodable.
 ({int width, int height, bool hasRealAlpha})? _runProbe(Uint8List bytes) {
   try {
-    final img.Image? decoded = img.decodeImage(bytes);
+    final img.Decoder? decoder = img.findDecoderForData(bytes);
+    if (decoder == null) return null;
+    // JPEG can never carry alpha, so the header-only decode answers both
+    // questions without the (slow) full pixel decode.
+    if (decoder is img.JpegDecoder) {
+      final info = decoder.startDecode(bytes);
+      if (info == null) return null;
+      return (width: info.width, height: info.height, hasRealAlpha: false);
+    }
+    final img.Image? decoded = decoder.decode(bytes);
     if (decoded == null) return null;
     final bool hasRealAlpha =
         decoded.hasAlpha && decoded.any((px) => px.a < decoded.maxChannelValue);
@@ -185,7 +188,11 @@ _CompressResult? _runCompression(_CompressRequest req) {
     if (decoded.numFrames > 1) return null;
 
     // Apply EXIF orientation before we strip metadata via re-encoding.
-    decoded = img.bakeOrientation(decoded);
+    // Skipped when no orientation tag exists: bakeOrientation would copy the
+    // whole pixel buffer just to return it unchanged.
+    if (decoded.exif.imageIfd.hasOrientation) {
+      decoded = img.bakeOrientation(decoded);
+    }
 
     // Resize if maxDimension is set (maintain aspect ratio).
     final int maxDim = req.maxDimension ?? 0;

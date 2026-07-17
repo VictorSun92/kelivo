@@ -77,6 +77,10 @@ class SettingsProvider extends ChangeNotifier {
   static const Set<String> _builtInProviderKeys = {
     ..._builtInProviderKeysInOrder,
   };
+
+  /// Single source of truth for "is this a built-in provider key".
+  static bool isBuiltInProviderKey(String key) =>
+      _builtInProviderKeys.contains(key);
   static const String _themeModeKey = 'theme_mode_v1';
   static const String _providerConfigsKey = 'provider_configs_v1';
   static const String _providerConfigsBackupKey = 'provider_configs_backup_v1';

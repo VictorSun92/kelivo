@@ -99,7 +99,8 @@ class MainFlutterWindow: NSWindow {
     self.layoutTrafficLightButton(titlebarView: titlebarView, button: minButton,  offsetTop: 14, offsetLeft: 30)
     self.layoutTrafficLightButton(titlebarView: titlebarView, button: zoomButton, offsetTop: 14, offsetLeft: 48)
 
-    // Add a transparent accessory view to reserve 40pt height in the title bar
+    // Add a transparent accessory view to reserve 40pt height in the title bar.
+    // Keep in sync with MacOSTitleBarDragArea.defaultHeight on the Dart side.
     let customToolbar = NSTitlebarAccessoryViewController()
     let newView = TitleBarInteractionView()
     newView.frame = NSRect(origin: .zero, size: NSSize(width: 100, height: 40))

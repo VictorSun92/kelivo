@@ -53,19 +53,7 @@ void main() {
       final f = _createFakeGif(tmpDir);
       final result = await ImageCompressor.compressIfNeeded(
         f.path,
-        enabled: true,
         quality: 50,
-      );
-      expect(result, f.path);
-    });
-
-    test('skips files smaller than minBytes', () async {
-      final f = _createTestJpeg(tmpDir, 'tiny.jpg', 1, 1);
-      expect(f.lengthSync(), lessThan(60 * 1024));
-      final result = await ImageCompressor.compressIfNeeded(
-        f.path,
-        enabled: true,
-        quality: 10,
       );
       expect(result, f.path);
     });
@@ -77,9 +65,7 @@ void main() {
         final origLen = f.lengthSync();
         final result = await ImageCompressor.compressIfNeeded(
           f.path,
-          enabled: true,
           quality: 30,
-          minBytes: 0,
         );
         expect(p.basename(result), 'large.jpg');
         expect(File(result).lengthSync(), lessThan(origLen));
@@ -90,10 +76,8 @@ void main() {
       final f = _createTestJpeg(tmpDir, 'big.jpg', 400, 300);
       await ImageCompressor.compressIfNeeded(
         f.path,
-        enabled: true,
         quality: 80,
         maxDimension: 100,
-        minBytes: 0,
       );
       final decoded = img.decodeImage(await File(f.path).readAsBytes());
       expect(decoded, isNotNull);
@@ -115,10 +99,8 @@ void main() {
         final origLen = f.lengthSync();
         final result = await ImageCompressor.compressIfNeeded(
           f.path,
-          enabled: true,
           quality: 80,
           keepPng: true,
-          minBytes: 0,
         );
         expect(p.extension(result).toLowerCase(), '.png');
         expect(
@@ -128,23 +110,9 @@ void main() {
       },
     );
 
-    test('returns original path when disabled', () async {
-      final f = _createTestJpeg(tmpDir, 'disabled.jpg', 100, 100);
-      final result = await ImageCompressor.compressIfNeeded(
-        f.path,
-        enabled: false,
-        quality: 50,
-      );
-      expect(result, f.path);
-    });
-
     test('returns original path for non-existent file', () async {
       final path = '${tmpDir.path}/nonexistent.png';
-      final result = await ImageCompressor.compressIfNeeded(
-        path,
-        enabled: true,
-        quality: 50,
-      );
+      final result = await ImageCompressor.compressIfNeeded(path, quality: 50);
       expect(result, path);
     });
 
@@ -161,10 +129,8 @@ void main() {
         // kelivo.png has real transparency → keep PNG via explicit option.
         final result = await ImageCompressor.compressIfNeeded(
           f.path,
-          enabled: true,
           quality: 50,
           keepPng: true,
-          minBytes: 0,
         );
         expect(p.extension(result).toLowerCase(), '.png');
         final decoded = img.decodeImage(await File(result).readAsBytes());
@@ -191,25 +157,11 @@ void main() {
 
       final result = await ImageCompressor.compressIfNeeded(
         f.path,
-        enabled: true,
         quality: 50,
-        minBytes: 0,
       );
       expect(File(result).existsSync(), isTrue);
       final decoded = img.decodeImage(await File(result).readAsBytes());
       expect(decoded, isNotNull);
-    });
-
-    test('skips enabled: false even with all parameters set', () async {
-      final f = _createTestJpeg(tmpDir, 'noop.jpg', 200, 200);
-      final result = await ImageCompressor.compressIfNeeded(
-        f.path,
-        enabled: false,
-        quality: 10,
-        maxDimension: 10,
-        keepPng: true,
-      );
-      expect(result, f.path);
     });
   });
 
@@ -228,6 +180,18 @@ void main() {
       final probe = await ImageCompressor.probe(_kelivoPng.path);
       expect(probe, isNotNull);
       expect(probe!.hasRealAlpha, isTrue);
+    });
+
+    test('reports dimensions and no real alpha for an opaque PNG', () async {
+      final image = img.Image(width: 64, height: 48, numChannels: 4);
+      img.fill(image, color: img.ColorRgba8(10, 20, 30, 255));
+      final f = File('${tmpDir.path}/opaque_alpha.png')
+        ..writeAsBytesSync(img.encodePng(image));
+      final probe = await ImageCompressor.probe(f.path);
+      expect(probe, isNotNull);
+      expect(probe!.width, 64);
+      expect(probe.height, 48);
+      expect(probe.hasRealAlpha, isFalse);
     });
 
     test('returns null for a non-existent file', () async {

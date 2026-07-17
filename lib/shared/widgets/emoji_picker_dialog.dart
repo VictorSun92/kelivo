@@ -271,5 +271,5 @@ Future<String?> showEmojiPickerDialog(
         },
       );
     },
-  ).then((result) => result).whenComplete(() => controller.dispose());
+  ).whenComplete(() => controller.dispose());
 }

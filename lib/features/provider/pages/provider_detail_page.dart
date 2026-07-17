@@ -127,24 +127,7 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    bool isUserAdded(String key) {
-      const fixed = {
-        'KelivoIN',
-        'OpenAI',
-        'Gemini',
-        'SiliconFlow',
-        'OpenRouter',
-        'DeepSeek',
-        'Tensdaq',
-        'AIhubmix',
-        'Aliyun',
-        'Zhipu AI',
-        'Claude',
-        'Grok',
-        'ByteDance',
-      };
-      return !fixed.contains(key);
-    }
+    bool isUserAdded(String key) => !SettingsProvider.isBuiltInProviderKey(key);
 
     return Scaffold(
       appBar: AppBar(
@@ -4429,7 +4412,7 @@ class _BrandAvatar extends StatelessWidget {
     final lower = name.toLowerCase();
     final bool mono =
         isDark &&
-        (RegExp(r'openai|gpt|o\\d').hasMatch(lower) ||
+        (RegExp(r'openai|gpt|o\d').hasMatch(lower) ||
             RegExp(r'grok|xai').hasMatch(lower) ||
             RegExp(r'openrouter').hasMatch(lower));
     return CircleAvatar(
