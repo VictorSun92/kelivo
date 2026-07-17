@@ -5337,6 +5337,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String debugPageManyMessagesSeedText(String role, int index) {
     return '$role 消息 #$index：快速随机调试样例，用于测试列表渲染、滚动稳定性、消息分组和会话历史性能。';
   }
+
+  @override
+  String get imageCompressionDialogTitle => '压缩图片';
+
+  @override
+  String get imageCompressionQuality => '质量';
+
+  @override
+  String get imageCompressionMaxDimension => '长边尺寸';
+
+  @override
+  String get imageCompressionFormat => '格式';
+
+  @override
+  String get imageCompressionKeepPng => '保留透明度 (PNG)';
+
+  @override
+  String get imageCompressionConvertJpeg => '转为 JPEG（白色背景）';
+
+  @override
+  String get imageCompressionButton => '压缩';
+
+  @override
+  String get imageCompressionBatchButton => '全部压缩';
+
+  @override
+  String get imageCompressionDimensionOriginal => '原始';
+
+  @override
+  String get imageCompressionCancel => '取消';
+
+  @override
+  String imageCompressionSingleResult(String from, String to, String pct) {
+    return '压缩完成: $from → $to (-$pct%)';
+  }
+
+  @override
+  String imageCompressionBatchResult(String saved, String pct) {
+    return '全部压缩完成，共节省 $saved (-$pct%)';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -10672,6 +10712,46 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String debugPageManyMessagesSeedText(String role, int index) {
     return '$role 消息 #$index：快速随机调试样例，用于测试列表渲染、滚动稳定性、消息分组和会话历史性能。';
   }
+
+  @override
+  String get imageCompressionDialogTitle => '压缩图片';
+
+  @override
+  String get imageCompressionQuality => '质量';
+
+  @override
+  String get imageCompressionMaxDimension => '长边尺寸';
+
+  @override
+  String get imageCompressionFormat => '格式';
+
+  @override
+  String get imageCompressionKeepPng => '保留透明度 (PNG)';
+
+  @override
+  String get imageCompressionConvertJpeg => '转为 JPEG（白色背景）';
+
+  @override
+  String get imageCompressionButton => '压缩';
+
+  @override
+  String get imageCompressionBatchButton => '全部压缩';
+
+  @override
+  String get imageCompressionDimensionOriginal => '原始';
+
+  @override
+  String get imageCompressionCancel => '取消';
+
+  @override
+  String imageCompressionSingleResult(String from, String to, String pct) {
+    return '压缩完成: $from → $to (-$pct%)';
+  }
+
+  @override
+  String imageCompressionBatchResult(String saved, String pct) {
+    return '全部压缩完成，共节省 $saved (-$pct%)';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -16006,5 +16086,45 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String debugPageManyMessagesSeedText(String role, int index) {
     return '$role 訊息 #$index：快速隨機調試樣例，用於測試列表渲染、捲動穩定性、訊息分組和會話歷史效能。';
+  }
+
+  @override
+  String get imageCompressionDialogTitle => '壓縮圖片';
+
+  @override
+  String get imageCompressionQuality => '品質';
+
+  @override
+  String get imageCompressionMaxDimension => '長邊尺寸';
+
+  @override
+  String get imageCompressionFormat => '格式';
+
+  @override
+  String get imageCompressionKeepPng => '保留透明度 (PNG)';
+
+  @override
+  String get imageCompressionConvertJpeg => '轉為 JPEG（白色背景）';
+
+  @override
+  String get imageCompressionButton => '壓縮';
+
+  @override
+  String get imageCompressionBatchButton => '全部壓縮';
+
+  @override
+  String get imageCompressionDimensionOriginal => '原始';
+
+  @override
+  String get imageCompressionCancel => '取消';
+
+  @override
+  String imageCompressionSingleResult(String from, String to, String pct) {
+    return '壓縮完成: $from → $to (-$pct%)';
+  }
+
+  @override
+  String imageCompressionBatchResult(String saved, String pct) {
+    return '全部壓縮完成，共節省 $saved (-$pct%)';
   }
 }
