@@ -334,7 +334,7 @@ class _DesktopProvidersBodyState extends State<_DesktopProvidersBody> {
       (name: 'Grok', key: 'Grok'),
       (name: l10n.providersPageByteDanceName, key: 'ByteDance'),
       (name: 'fal', key: 'fal'),
-    ];
+    ].where((p) => kForkBuiltInProviderAllowlist.contains(p.key)).toList();
 
     final cfgs = settings.providerConfigs;
     final baseKeys = {for (final p in base()) p.key};

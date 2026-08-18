@@ -18,6 +18,8 @@ import 'package:collection/collection.dart' show DeepCollectionEquality;
 import 'dart:io';
 import 'package:socks5_proxy/socks_client.dart' as socks;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../fork_local/provider_allowlist.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -102,7 +104,7 @@ class SettingsProvider extends ChangeNotifier {
   static const String _providerUngroupedPositionKey =
       'provider_ungrouped_position_v1'; // display index among groups
   static const String providerUngroupedGroupKey = '__ungrouped__';
-  static const List<String> _builtInProviderKeysInOrder = [
+  static const List<String> _builtInProviderKeysInOrderUpstream = [
     'OpenAI',
     'Gemini',
     'STA1N API',
@@ -124,9 +126,13 @@ class SettingsProvider extends ChangeNotifier {
     'ByteDance',
     'fal',
   ];
-  static const Set<String> _builtInProviderKeys = {
-    ..._builtInProviderKeysInOrder,
-  };
+  // fork: upstream's list is kept verbatim above and filtered here.
+  static final List<String> _builtInProviderKeysInOrder =
+      _builtInProviderKeysInOrderUpstream
+          .where(kForkBuiltInProviderAllowlist.contains)
+          .toList(growable: false);
+  static final Set<String> _builtInProviderKeys = _builtInProviderKeysInOrder
+      .toSet();
   static bool isBuiltInProvider(String key) =>
       _builtInProviderKeys.contains(key);
 
@@ -1637,7 +1643,7 @@ class SettingsProvider extends ChangeNotifier {
     }
     _backupEncryptionEnabled =
         prefs.getBool(_backupEncryptionEnabledKey) ?? false;
-    if (_providerConfigs.isEmpty) {
+    if (_providerConfigs.isEmpty && kForkSeedsBuiltInProviders) {
       // Seed a couple of sensible defaults on first launch, but do not recreate
       // providers implicitly during later reads (e.g., when switching chats).
       ensureProviderConfig('KelivoIN', defaultName: 'KelivoIN');
