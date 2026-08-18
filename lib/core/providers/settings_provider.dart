@@ -5,6 +5,8 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:socks5_proxy/socks_client.dart' as socks;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../fork_local/provider_allowlist.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -68,7 +70,7 @@ class SettingsProvider extends ChangeNotifier {
   static const String _providerUngroupedPositionKey =
       'provider_ungrouped_position_v1'; // display index among groups
   static const String providerUngroupedGroupKey = '__ungrouped__';
-  static const List<String> _builtInProviderKeysInOrder = [
+  static const List<String> _builtInProviderKeysInOrderUpstream = [
     'OpenAI',
     'SiliconFlow',
     'Gemini',
@@ -85,9 +87,13 @@ class SettingsProvider extends ChangeNotifier {
     'Grok',
     'ByteDance',
   ];
-  static const Set<String> _builtInProviderKeys = {
-    ..._builtInProviderKeysInOrder,
-  };
+  // fork: upstream's list is kept verbatim above and filtered here.
+  static final List<String> _builtInProviderKeysInOrder =
+      _builtInProviderKeysInOrderUpstream
+          .where(kForkBuiltInProviderAllowlist.contains)
+          .toList(growable: false);
+  static final Set<String> _builtInProviderKeys =
+      _builtInProviderKeysInOrder.toSet();
   static const String _themeModeKey = 'theme_mode_v1';
   static const String _providerConfigsKey = 'provider_configs_v1';
   static const String _pinnedModelsKey = 'pinned_models_v1';
@@ -1517,7 +1523,7 @@ class SettingsProvider extends ChangeNotifier {
         );
       } catch (_) {}
     }
-    if (_providerConfigs.isEmpty) {
+    if (_providerConfigs.isEmpty && kForkSeedsBuiltInProviders) {
       // Seed a couple of sensible defaults on first launch, but do not recreate
       // providers implicitly during later reads (e.g., when switching chats).
       ensureProviderConfig('KelivoIN', defaultName: 'KelivoIN');
