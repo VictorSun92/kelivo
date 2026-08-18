@@ -38,6 +38,7 @@ import '../../../utils/model_grouping.dart';
 import '../../../theme/app_font_weights.dart';
 import 'package:Kelivo/theme/app_semantic_colors.dart';
 import 'package:Kelivo/shared/widgets/section_card.dart';
+import '../../../fork_local/provider_allowlist.dart';
 
 class ProviderDetailPage extends StatefulWidget {
   const ProviderDetailPage({
@@ -149,7 +150,8 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
         'Grok',
         'ByteDance',
       };
-      return !fixed.contains(key);
+      return !fixed.contains(key) ||
+          !kForkBuiltInProviderAllowlist.contains(key);
     }
 
     return Scaffold(

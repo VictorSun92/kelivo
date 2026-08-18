@@ -24,6 +24,7 @@ import '../widgets/provider_group_select_sheet.dart';
 import '../../../utils/provider_grouping_logic.dart';
 import '../../../theme/app_font_weights.dart';
 import 'package:Kelivo/theme/app_semantic_colors.dart';
+import '../../../fork_local/provider_allowlist.dart';
 
 class ProvidersPage extends StatefulWidget {
   const ProvidersPage({super.key});
@@ -502,7 +503,7 @@ class _ProvidersPageState extends State<ProvidersPage> {
     //  _p('AIHubMix', 'AIHubMix', enabled: false, models: 0),
     // _p('Ollama', 'Ollama', enabled: true, models: 0),
     // _p('GitHub', 'GitHub', enabled: false, models: 0),
-  ];
+  ].where((p) => kForkBuiltInProviderAllowlist.contains(p.keyName)).toList();
 
   List<_ProviderGroupingRowVM> _buildProviderGroupingRows({
     required AppLocalizations l10n,
