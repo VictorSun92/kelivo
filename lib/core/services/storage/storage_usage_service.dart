@@ -9,6 +9,7 @@ import '../../database/database_installation_gate.dart';
 import '../hive_migration_marker.dart';
 import '../legacy_data_retirement_service.dart';
 import '../backup/local_snapshot_schedule.dart';
+import '../backup/restore_business_lease.dart';
 import '../backup/restore_trace_service.dart';
 import '../../../utils/app_directories.dart';
 import '../../../utils/avatar_cache.dart';
@@ -235,6 +236,12 @@ abstract final class StorageUsageService {
       )) {
         final rel = p.relative(ent.path, from: root.path);
         final parts = p.split(rel);
+        // Process lease and database installation receipts are runtime
+        // bookkeeping, not user data: keep them out of the report.
+        if (parts.first == RestoreBusinessLease.leaseDirectoryName ||
+            parts.last.contains('database_installation_receipt')) {
+          continue;
+        }
         int bytes = 0;
         try {
           bytes = await ent.length();
